@@ -19,6 +19,7 @@ export const locationsApi = {
     method: 'POST',
     body: JSON.stringify(location),
   }),
+  remove: (locationId) => request(`/api/locations/${locationId}`, { method: 'DELETE' }),
 }
 
 export const analysesApi = {
@@ -27,4 +28,10 @@ export const analysesApi = {
     method: 'POST',
     body: JSON.stringify(analysis),
   }),
+  result: (analysisId) => request(`/api/analyses/${analysisId}/result`),
+  remove: (analysisId) => request(`/api/analyses/${analysisId}`, { method: 'DELETE' }),
+}
+
+export const healthApi = {
+  status: () => request('/health'),
 }

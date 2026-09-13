@@ -63,6 +63,20 @@
   box-shadow: 0 0 12px rgba(185, 239, 107, 0.7);
 }
 
+.service-state.offline {
+  color: #f49b83;
+}
+
+.service-state.offline .status-dot {
+  background: #e36f52;
+  box-shadow: 0 0 12px rgba(227, 111, 82, 0.65);
+}
+
+.service-state.checking .status-dot {
+  background: #f1cf73;
+  box-shadow: 0 0 12px rgba(241, 207, 115, 0.55);
+}
+
 main {
   width: min(1440px, calc(100% - 40px));
   margin: 0 auto;
@@ -159,6 +173,33 @@ h1 {
   color: var(--muted);
   font-size: 13px;
   margin: 0;
+}
+
+.parameters-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.parameters-heading > div {
+  display: flex;
+  align-items: baseline;
+  gap: 15px;
+}
+
+.text-button {
+  padding: 6px 0;
+  color: var(--accent);
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid #526158;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.text-button:hover {
+  border-color: var(--accent);
 }
 
 .step {
@@ -277,7 +318,8 @@ label {
   margin-bottom: 18px;
 }
 
-input {
+input,
+select {
   width: 100%;
   margin-top: 7px;
   padding: 11px 12px;
@@ -288,8 +330,21 @@ input {
   outline: none;
 }
 
-input:focus {
+input:focus,
+select:focus {
   border-color: var(--accent);
+}
+
+select {
+  appearance: none;
+  background-image:
+    linear-gradient(45deg, transparent 50%, #91a297 50%),
+    linear-gradient(135deg, #91a297 50%, transparent 50%);
+  background-position:
+    calc(100% - 15px) calc(50% - 2px),
+    calc(100% - 10px) calc(50% - 2px);
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
 }
 
 input:disabled {
@@ -302,6 +357,13 @@ input:disabled {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0 12px;
+}
+
+.field-hint {
+  margin: -8px 0 18px;
+  color: #7f8e84;
+  font-size: 11px;
+  line-height: 1.45;
 }
 
 .coordinate-grid input[type='number'] {
@@ -359,15 +421,22 @@ input:disabled {
   font-size: 13px;
 }
 
+.location-row {
+  display: flex;
+  align-items: stretch;
+  color: #aab7ae;
+  border-bottom: 1px solid var(--line);
+}
+
 .location-chip {
-  width: 100%;
-  padding: 10px 0;
+  min-width: 0;
+  flex: 1;
+  padding: 10px 8px 10px 0;
   display: flex;
   justify-content: space-between;
   color: #aab7ae;
   background: transparent;
   border: 0;
-  border-bottom: 1px solid var(--line);
   text-align: left;
 }
 
@@ -378,6 +447,19 @@ input:disabled {
 
 .location-chip small {
   color: #637168;
+}
+
+.delete-button {
+  padding: 5px 8px;
+  color: #d58c7a;
+  background: transparent;
+  border: 1px solid transparent;
+  font-size: 10px;
+}
+
+.delete-button:hover {
+  color: #ffc0ae;
+  border-color: #75483c;
 }
 
 .latest-result {
@@ -405,6 +487,42 @@ input:disabled {
 .latest-result p {
   color: var(--muted);
   margin: 0;
+}
+
+.latest-result .failure-reason {
+  margin-top: 12px;
+  padding: 10px 12px;
+  color: #ffc0ae;
+  background: #3b211b;
+  border-left: 2px solid #e36f52;
+  font-size: 12px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.result-details {
+  margin: 22px 0 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 22px;
+}
+
+.result-details div {
+  min-width: 0;
+}
+
+.result-details dt {
+  color: #708077;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.result-details dd {
+  margin: 3px 0 0;
+  color: #cbd5ce;
+  font-size: 12px;
+  overflow-wrap: anywhere;
 }
 
 .metric {
@@ -489,6 +607,26 @@ input:disabled {
   border: 1px solid var(--line);
 }
 
+.history-filters {
+  margin-bottom: 14px;
+  padding: 14px;
+  display: grid;
+  grid-template-columns: minmax(180px, 280px) minmax(180px, 240px) auto;
+  align-items: end;
+  gap: 12px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+}
+
+.history-filters label {
+  margin: 0;
+}
+
+.history-filters .text-button {
+  justify-self: start;
+  margin-bottom: 9px;
+}
+
 table {
   width: 100%;
   min-width: 760px;
@@ -545,6 +683,11 @@ tbody tr:hover {
   cursor: not-allowed;
 }
 
+.table-actions {
+  display: flex;
+  gap: 5px;
+}
+
 @media (max-width: 960px) {
   .intro {
     grid-template-columns: 1fr;
@@ -572,6 +715,10 @@ tbody tr:hover {
   }
 
   .class-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .history-filters {
     grid-template-columns: 1fr 1fr;
   }
 }
@@ -616,6 +763,15 @@ tbody tr:hover {
 
   .coordinate-grid,
   .date-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .parameters-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .history-filters {
     grid-template-columns: 1fr;
   }
 

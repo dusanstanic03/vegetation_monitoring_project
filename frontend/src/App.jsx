@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import MapSelector from './components/MapSelector'
-import { analysesApi, locationsApi } from './services/api'
+import { analysesApi, healthApi, locationsApi } from './services/api'
 import './App.css'
 
 const initialBounds = {
@@ -12,6 +12,28 @@ const initialBounds = {
 
 function roundCoordinate(value) {
   return Number(Number(value).toFixed(6))
+}
+
+function toInputDate(date) {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+function daysAgo(numberOfDays) {
+  const date = new Date()
+  date.setDate(date.getDate() - numberOfDays)
+  return toInputDate(date)
+}
+
+function initialForm() {
+  return {
+    name: 'Nova oblast',
+    date_from: daysAgo(37),
+    date_to: daysAgo(7),
+    max_cloud_percentage: 20,
+  }
 }
 
 function formatIndex(value) {
@@ -30,13 +52,10 @@ function App() {
   const [analyses, setAnalyses] = useState([])
   const [bounds, setBounds] = useState(initialBounds)
   const [selectedLocationId, setSelectedLocationId] = useState(null)
-  const [form, setForm] = useState({
-    name: 'Nova oblast',
-    date_from: '2026-08-01',
-    date_to: '2026-08-15',
-    max_cloud_percentage: 20,
-  })
+  const [form, setForm] = useState(initialForm)
   const [latestResult, setLatestResult] = useState(null)
+  const [filters, setFilters] = useState({ locationId: 'ALL', status: 'ALL' })
+  const [serviceStatus, setServiceStatus] = useState('checking')
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
@@ -78,6 +97,27 @@ function App() {
     }
   }, [])
 
+  useEffect(() => {
+    let cancelled = false
+
+    function checkService() {
+      healthApi.status()
+        .then(() => {
+          if (!cancelled) setServiceStatus('online')
+        })
+        .catch(() => {
+          if (!cancelled) setServiceStatus('offline')
+        })
+    }
+
+    checkService()
+    const intervalId = window.setInterval(checkService, 30000)
+    return () => {
+      cancelled = true
+      window.clearInterval(intervalId)
+    }
+  }, [])
+
   function updateForm(event) {
     const { name, value } = event.target
     setForm((current) => ({ ...current, [name]: value }))
@@ -96,6 +136,13 @@ function App() {
     setBounds(nextBounds)
   }
 
+  function resetArea() {
+    setBounds(initialBounds)
+    setSelectedLocationId(null)
+    setLatestResult(null)
+    setForm((current) => ({ ...current, name: 'Nova oblast' }))
+  }
+
   function selectLocation(location, keepResult = false) {
     setSelectedLocationId(location.id)
     if (!keepResult) setLatestResult(null)
@@ -108,11 +155,44 @@ function App() {
     })
   }
 
-  function showAnalysis(analysis) {
-    const location = locations.find((item) => item.id === analysis.location_id)
-    setLatestResult(analysis)
-    if (location) selectLocation(location, true)
-    document.querySelector('.workspace')?.scrollIntoView({ behavior: 'smooth' })
+  async function showAnalysis(analysis) {
+    try {
+      setError('')
+      const result = await analysesApi.result(analysis.id)
+      const location = locations.find((item) => item.id === result.location_id)
+      setLatestResult(result)
+      if (location) selectLocation(location, true)
+      document.querySelector('.workspace')?.scrollIntoView({ behavior: 'smooth' })
+    } catch (requestError) {
+      setError(requestError.message)
+    }
+  }
+
+  async function deleteAnalysis(analysis) {
+    if (!window.confirm(`Obrisati analizu #${analysis.id}?`)) return
+
+    try {
+      setError('')
+      await analysesApi.remove(analysis.id)
+      if (latestResult?.id === analysis.id) setLatestResult(null)
+      await loadData()
+    } catch (requestError) {
+      setError(requestError.message)
+    }
+  }
+
+  async function deleteLocation(location) {
+    if (!window.confirm(`Obrisati lokaciju "${location.name}" i sve njene analize?`)) return
+
+    try {
+      setError('')
+      await locationsApi.remove(location.id)
+      if (selectedLocationId === location.id) resetArea()
+      if (latestResult?.location_id === location.id) setLatestResult(null)
+      await loadData()
+    } catch (requestError) {
+      setError(requestError.message)
+    }
   }
 
   async function handleSubmit(event) {
@@ -137,6 +217,9 @@ function App() {
       })
 
       setLatestResult(analysis)
+      if (analysis.status === 'FAILED') {
+        setError(analysis.failure_reason || 'Copernicus analiza nije uspela.')
+      }
       await loadData()
     } catch (requestError) {
       setError(requestError.message)
@@ -145,6 +228,17 @@ function App() {
     }
   }
 
+  const filteredAnalyses = analyses.filter((analysis) => {
+    const locationMatches = filters.locationId === 'ALL'
+      || analysis.location_id === Number(filters.locationId)
+    const statusMatches = filters.status === 'ALL' || analysis.status === filters.status
+    return locationMatches && statusMatches
+  })
+
+  const selectedResultLocation = latestResult
+    ? locations.find((location) => location.id === latestResult.location_id)
+    : null
+
   return (
     <div className="app-shell">
       <header className="topbar">
@@ -152,9 +246,11 @@ function App() {
           <span className="brand-mark">VM</span>
           <span>Vegetation Monitor</span>
         </a>
-        <div className="service-state">
+        <div className={`service-state ${serviceStatus}`} title="Status Flask backend servera">
           <span className="status-dot" />
-          Sentinel-2 analiza
+          {serviceStatus === 'online' && 'Backend radi'}
+          {serviceStatus === 'offline' && 'Backend nije dostupan'}
+          {serviceStatus === 'checking' && 'Provera servera'}
         </div>
       </header>
 
@@ -198,9 +294,12 @@ function App() {
           </div>
 
           <aside className="control-panel">
-            <div className="panel-heading">
-              <span className="step">02</span>
-              <h2>Parametri analize</h2>
+            <div className="panel-heading parameters-heading">
+              <div>
+                <span className="step">02</span>
+                <h2>Parametri analize</h2>
+              </div>
+              <button className="text-button" type="button" onClick={resetArea}>Resetuj oblast</button>
             </div>
 
             <form onSubmit={handleSubmit}>
@@ -221,13 +320,16 @@ function App() {
               <div className="date-grid">
                 <label>
                   Datum od
-                  <input name="date_from" type="date" value={form.date_from} onChange={updateForm} required />
+                  <input name="date_from" type="date" max={form.date_to} value={form.date_from} onChange={updateForm} required />
                 </label>
                 <label>
                   Datum do
-                  <input name="date_to" type="date" value={form.date_to} onChange={updateForm} required />
+                  <input name="date_to" type="date" min={form.date_from} max={toInputDate(new Date())} value={form.date_to} onChange={updateForm} required />
                 </label>
               </div>
+              <p className="field-hint">
+                Preporuka: izaberite najmanje 15 dana, jer Sentinel-2 nema snimak za svaki dan.
+              </p>
 
               <label>
                 Maksimalna oblacnost: <strong>{form.max_cloud_percentage}%</strong>
@@ -252,16 +354,26 @@ function App() {
               <p className="list-label">Sacuvane lokacije</p>
               {loading && <p className="muted">Ucitavanje...</p>}
               {!loading && locations.length === 0 && <p className="muted">Jos nema sacuvanih lokacija.</p>}
-              {locations.slice(0, 4).map((location) => (
-                <button
-                  className={location.id === selectedLocationId ? 'location-chip active' : 'location-chip'}
-                  type="button"
-                  key={location.id}
-                  onClick={() => selectLocation(location)}
-                >
-                  <span>{location.name}</span>
-                  <small>#{location.id}</small>
-                </button>
+              {locations.slice(0, 6).map((location) => (
+                <div className="location-row" key={location.id}>
+                  <button
+                    className={location.id === selectedLocationId ? 'location-chip active' : 'location-chip'}
+                    type="button"
+                    onClick={() => selectLocation(location)}
+                  >
+                    <span>{location.name}</span>
+                    <small>#{location.id}</small>
+                  </button>
+                  <button
+                    className="delete-button"
+                    type="button"
+                    aria-label={`Obrisi lokaciju ${location.name}`}
+                    title="Obrisi lokaciju"
+                    onClick={() => deleteLocation(location)}
+                  >
+                    Obrisi
+                  </button>
+                </div>
               ))}
             </div>
           </aside>
@@ -270,9 +382,19 @@ function App() {
         {latestResult && (
           <section className="latest-result">
             <div>
-              <p className="eyebrow">Poslednja zavrsena analiza</p>
+              <p className="eyebrow">Detalji izabrane analize</p>
               <h2>{indexLabel(latestResult.mean_ndvi)}</h2>
               <p>Status: <strong>{latestResult.status}</strong></p>
+              {latestResult.failure_reason && (
+                <p className="failure-reason">Razlog: {latestResult.failure_reason}</p>
+              )}
+              <dl className="result-details">
+                <div><dt>Analiza</dt><dd>#{latestResult.id}</dd></div>
+                <div><dt>Lokacija</dt><dd>{selectedResultLocation?.name ?? `#${latestResult.location_id}`}</dd></div>
+                <div><dt>Period</dt><dd>{latestResult.date_from} / {latestResult.date_to}</dd></div>
+                <div><dt>Snimak</dt><dd>{latestResult.satellite_date ?? 'Nije dostupan'}</dd></div>
+                <div><dt>Oblacnost</dt><dd>do {latestResult.max_cloud_percentage}%</dd></div>
+              </dl>
             </div>
             <div className="metric ndvi">
               <span>NDVI</span>
@@ -304,7 +426,36 @@ function App() {
               <span className="step">03</span>
               <h2>Istorija analiza</h2>
             </div>
-            <span>{analyses.length} zapisa</span>
+            <span>{filteredAnalyses.length} od {analyses.length} zapisa</span>
+          </div>
+
+          <div className="history-filters">
+            <label>
+              Lokacija
+              <select
+                value={filters.locationId}
+                onChange={(event) => setFilters((current) => ({ ...current, locationId: event.target.value }))}
+              >
+                <option value="ALL">Sve lokacije</option>
+                {locations.map((location) => <option key={location.id} value={location.id}>{location.name}</option>)}
+              </select>
+            </label>
+            <label>
+              Status
+              <select
+                value={filters.status}
+                onChange={(event) => setFilters((current) => ({ ...current, status: event.target.value }))}
+              >
+                <option value="ALL">Svi statusi</option>
+                <option value="COMPLETED">COMPLETED</option>
+                <option value="FAILED">FAILED</option>
+                <option value="PROCESSING">PROCESSING</option>
+                <option value="PENDING">PENDING</option>
+              </select>
+            </label>
+            <button type="button" className="text-button" onClick={() => setFilters({ locationId: 'ALL', status: 'ALL' })}>
+              Ponisti filtere
+            </button>
           </div>
 
           <div className="history-table-wrap">
@@ -317,11 +468,11 @@ function App() {
                   <th>Status</th>
                   <th>NDVI</th>
                   <th>NDWI</th>
-                  <th>Mapa</th>
+                  <th>Akcije</th>
                 </tr>
               </thead>
               <tbody>
-                {analyses.map((analysis) => {
+                {filteredAnalyses.map((analysis) => {
                   const location = locations.find((item) => item.id === analysis.location_id)
                   return (
                     <tr key={analysis.id}>
@@ -332,20 +483,20 @@ function App() {
                       <td>{formatIndex(analysis.mean_ndvi)}</td>
                       <td>{formatIndex(analysis.mean_ndwi)}</td>
                       <td>
-                        <button
-                          className="result-button"
-                          type="button"
-                          disabled={!analysis.classification_image_url}
-                          onClick={() => showAnalysis(analysis)}
-                        >
-                          Prikazi
-                        </button>
+                        <div className="table-actions">
+                          <button className="result-button" type="button" onClick={() => showAnalysis(analysis)}>
+                            Detalji
+                          </button>
+                          <button className="delete-button" type="button" onClick={() => deleteAnalysis(analysis)}>
+                            Obrisi
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   )
                 })}
-                {!loading && analyses.length === 0 && (
-                  <tr><td colSpan="7" className="empty-row">Pokrenite prvu analizu da bi se rezultat pojavio ovde.</td></tr>
+                {!loading && filteredAnalyses.length === 0 && (
+                  <tr><td colSpan="7" className="empty-row">Nema analiza koje odgovaraju izabranim filterima.</td></tr>
                 )}
               </tbody>
             </table>
