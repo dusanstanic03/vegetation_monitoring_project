@@ -131,6 +131,11 @@ SWAGGER_TEMPLATE = {
                 "dry_percentage": {"type": "number", "format": "float", "example": 24.1},
                 "degraded_percentage": {"type": "number", "format": "float", "example": 12.7},
                 "water_percentage": {"type": "number", "format": "float", "example": 4.8},
+                "failure_reason": {
+                    "type": "string",
+                    "x-nullable": True,
+                    "example": None,
+                },
                 "status": {
                     "type": "string",
                     "enum": ["PENDING", "PROCESSING", "COMPLETED", "FAILED"],

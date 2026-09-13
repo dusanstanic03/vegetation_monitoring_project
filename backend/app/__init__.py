@@ -9,9 +9,11 @@ from app.swagger import SWAGGER_CONFIG, SWAGGER_TEMPLATE
 db = SQLAlchemy()
 
 
-def create_app():
+def create_app(config_overrides=None):
     app = Flask(__name__)
     app.config.from_object(Config)
+    if config_overrides:
+        app.config.update(config_overrides)
 
     db.init_app(app)
     Swagger(app, config=SWAGGER_CONFIG, template=SWAGGER_TEMPLATE)
@@ -55,6 +57,7 @@ def create_app():
                 "dry_percentage": "FLOAT",
                 "degraded_percentage": "FLOAT",
                 "water_percentage": "FLOAT",
+                "failure_reason": "TEXT",
             }
             for column_name, column_type in result_columns.items():
                 if column_name not in existing_columns:

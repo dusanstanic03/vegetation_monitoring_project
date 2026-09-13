@@ -2,6 +2,7 @@ from flask import Blueprint, request
 
 from app import db
 from app.models.location import Location
+from app.services.analysis_service import AnalysisService
 from app.services.location_service import LocationService
 
 
@@ -150,6 +151,8 @@ def delete_location(location_id):
     if not location:
         return {"error": "Location not found"}, 404
 
+    for analysis in location.analyses:
+        AnalysisService.delete_overlay(analysis)
     db.session.delete(location)
     db.session.commit()
     return "", 204

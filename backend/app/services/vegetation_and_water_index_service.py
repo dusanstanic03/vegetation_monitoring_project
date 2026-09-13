@@ -20,4 +20,8 @@ class VegetationAndWaterIndexService:
 
     @staticmethod
     def mean_index(index_values):
-        return float(np.nanmean(index_values))
+        index_values = np.asarray(index_values, dtype=float)
+        valid_values = index_values[np.isfinite(index_values)]
+        if valid_values.size == 0:
+            raise ValueError("Vegetation index does not contain valid pixels")
+        return float(np.mean(valid_values))

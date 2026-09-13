@@ -19,6 +19,7 @@ class Analysis(db.Model):
     dry_percentage = db.Column(db.Float, nullable=True)
     degraded_percentage = db.Column(db.Float, nullable=True)
     water_percentage = db.Column(db.Float, nullable=True)
+    failure_reason = db.Column(db.Text, nullable=True)
     status = db.Column(db.String(20), nullable=False, default="PENDING")
     created_at = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
 
@@ -39,6 +40,7 @@ class Analysis(db.Model):
             "dry_percentage": self.dry_percentage,
             "degraded_percentage": self.degraded_percentage,
             "water_percentage": self.water_percentage,
+            "failure_reason": self.failure_reason,
             "status": self.status,
             "created_at": self.created_at.isoformat(),
         }

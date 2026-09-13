@@ -10,7 +10,8 @@ class ClassificationService:
 
     HEALTHY_NDVI_THRESHOLD = 0.5
     DRY_NDVI_THRESHOLD = 0.2
-    WATER_NDWI_THRESHOLD = 0.2
+    WATER_NDWI_THRESHOLD = 0.0
+    WATER_MAX_NDVI = 0.2
 
     CLASS_NAMES = {
         DEGRADED: "degraded",
@@ -30,7 +31,11 @@ class ClassificationService:
         classification = np.full(ndvi.shape, cls.INVALID, dtype=np.uint8)
         valid = np.isfinite(ndvi) & np.isfinite(ndwi)
 
-        water = valid & (ndwi > cls.WATER_NDWI_THRESHOLD)
+        water = (
+            valid
+            & (ndwi > cls.WATER_NDWI_THRESHOLD)
+            & (ndvi < cls.WATER_MAX_NDVI)
+        )
         healthy = valid & ~water & (ndvi >= cls.HEALTHY_NDVI_THRESHOLD)
         dry = (
             valid

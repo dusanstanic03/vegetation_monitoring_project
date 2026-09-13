@@ -71,7 +71,8 @@ class AnalysisService:
     def create_analysis(data):
         validated, error = AnalysisService.validate_analysis_data(data)
         if error:
-            return None, error, 400
+            status_code = 404 if error == "Location not found" else 400
+            return None, error, status_code
 
         analysis = Analysis(
             location_id=validated["location"].id,
@@ -101,7 +102,7 @@ class AnalysisService:
             overlay_path = OverlayService.save(
                 surface["classification"],
                 analysis.id,
-                Path(current_app.static_folder) / "analysis_results",
+                AnalysisService.get_overlay_directory(),
             )
             percentages = surface["percentages"]
             analysis.classification_image_url = f"/static/analysis_results/{overlay_path.name}"
@@ -110,9 +111,11 @@ class AnalysisService:
             analysis.degraded_percentage = percentages["degraded"]
             analysis.water_percentage = percentages["water"]
             analysis.status = "COMPLETED"
-        except Exception:
-            current_app.logger.exception("Analysis %s failed", analysis.id)
+        except Exception as error:
+            if not current_app.testing:
+                current_app.logger.exception("Analysis %s failed", analysis.id)
             analysis.status = "FAILED"
+            analysis.failure_reason = str(error)[:1000]
 
         db.session.commit()
         return analysis, None, 201
@@ -125,8 +128,9 @@ class AnalysisService:
             query = query.filter(Analysis.location_id == int(args["location_id"]))
         if args.get("status"):
             status = args["status"].upper()
-            if status in AnalysisService.VALID_STATUSES:
-                query = query.filter(Analysis.status == status)
+            if status not in AnalysisService.VALID_STATUSES:
+                raise ValueError("status must be PENDING, PROCESSING, COMPLETED or FAILED")
+            query = query.filter(Analysis.status == status)
         if args.get("date_from"):
             query = query.filter(Analysis.date_from >= AnalysisService.parse_date(args["date_from"], "date_from"))
         if args.get("date_to"):
@@ -135,12 +139,23 @@ class AnalysisService:
         return query.order_by(Analysis.created_at.desc()).all()
 
     @staticmethod
-    def delete_analysis(analysis):
+    def get_overlay_directory():
+        configured_directory = current_app.config.get("ANALYSIS_RESULTS_DIRECTORY")
+        if configured_directory:
+            return Path(configured_directory)
+        return Path(current_app.static_folder) / "analysis_results"
+
+    @staticmethod
+    def delete_overlay(analysis):
         if analysis.classification_image_url:
-            overlay_path = Path(current_app.static_folder) / "analysis_results" / Path(
+            overlay_path = AnalysisService.get_overlay_directory() / Path(
                 analysis.classification_image_url
             ).name
             overlay_path.unlink(missing_ok=True)
+
+    @staticmethod
+    def delete_analysis(analysis):
+        AnalysisService.delete_overlay(analysis)
 
         db.session.delete(analysis)
         db.session.commit()

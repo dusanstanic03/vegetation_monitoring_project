@@ -12,6 +12,8 @@ from sentinelhub import (
 
 
 class CopernicusService:
+    MAX_IMAGE_DIMENSION = 2000
+
     EVALSCRIPT = """
     //VERSION=3
     function setup() {
@@ -41,7 +43,7 @@ class CopernicusService:
             bbox=[location.min_lon, location.min_lat, location.max_lon, location.max_lat],
             crs=CRS.WGS84,
         )
-        size = bbox_to_dimensions(bbox, resolution=10)
+        size = self.fit_request_size(bbox_to_dimensions(bbox, resolution=10))
 
         request = SentinelHubRequest(
             evalscript=self.EVALSCRIPT,
@@ -64,12 +66,34 @@ class CopernicusService:
         if not data:
             raise ValueError("Copernicus did not return Sentinel-2 data")
 
-        image = np.asarray(data[0])
+        return self.extract_bands(data[0])
+
+    @staticmethod
+    def extract_bands(image):
+        image = np.asarray(image)
+        if image.ndim != 3 or image.shape[2] < 4:
+            raise ValueError("Copernicus returned an invalid Sentinel-2 image")
+
         mask = image[:, :, 3] == 1
+        if not np.any(mask):
+            raise ValueError(
+                "No valid Sentinel-2 imagery was found. Choose a wider date range "
+                "or increase max cloud percentage."
+            )
 
         return {
             "B03": np.where(mask, image[:, :, 0], np.nan),
             "B04": np.where(mask, image[:, :, 1], np.nan),
             "B08": np.where(mask, image[:, :, 2], np.nan),
-            "satellite_date": date_from,
+            "satellite_date": None,
         }
+
+    @classmethod
+    def fit_request_size(cls, size):
+        width, height = size
+        largest_dimension = max(width, height)
+        if largest_dimension <= cls.MAX_IMAGE_DIMENSION:
+            return width, height
+
+        scale = cls.MAX_IMAGE_DIMENSION / largest_dimension
+        return max(1, round(width * scale)), max(1, round(height * scale))
