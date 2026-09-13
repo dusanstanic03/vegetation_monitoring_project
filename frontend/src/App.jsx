@@ -10,6 +10,10 @@ const initialBounds = {
   max_lon: 20.56,
 }
 
+function roundCoordinate(value) {
+  return Number(Number(value).toFixed(6))
+}
+
 function formatIndex(value) {
   return value == null ? '--' : Number(value).toFixed(3)
 }
@@ -97,10 +101,10 @@ function App() {
     if (!keepResult) setLatestResult(null)
     setForm((current) => ({ ...current, name: location.name }))
     setBounds({
-      min_lat: location.min_lat,
-      min_lon: location.min_lon,
-      max_lat: location.max_lat,
-      max_lon: location.max_lon,
+      min_lat: roundCoordinate(location.min_lat),
+      min_lon: roundCoordinate(location.min_lon),
+      max_lat: roundCoordinate(location.max_lat),
+      max_lon: roundCoordinate(location.max_lon),
     })
   }
 
@@ -161,7 +165,7 @@ function App() {
             <h1>Stanje vegetacije,<br />vidljivo na mapi.</h1>
           </div>
           <p className="intro-copy">
-            Oznacite oblast sa dva klika, izaberite period i pokrenite NDVI i NDWI analizu Sentinel-2 snimaka.
+            Nacrtajte oblast na mapi, izaberite period i pokrenite NDVI i NDWI analizu Sentinel-2 snimaka.
           </p>
         </section>
 
@@ -174,7 +178,7 @@ function App() {
                 <span className="step">01</span>
                 <h2>Izaberite oblast</h2>
               </div>
-              <p>Dva klika na mapi odredjuju uglove oblasti.</p>
+              <p>Ukljucite crtanje i prevucite misem preko oblasti.</p>
             </div>
             <MapSelector
               bounds={bounds}
@@ -209,7 +213,7 @@ function App() {
                 {Object.entries(bounds).map(([name, value]) => (
                   <label key={name}>
                     {name.replace('_', ' ')}
-                    <input name={name} type="number" step="0.000001" value={value} onChange={updateCoordinate} required />
+                    <input name={name} type="number" step="any" value={value} onChange={updateCoordinate} required />
                   </label>
                 ))}
               </div>
