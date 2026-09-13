@@ -3,6 +3,7 @@ Flask-SQLAlchemy==3.1.1
 flasgger==0.9.7.1
 python-dotenv==1.0.1
 numpy==2.2.1
+Pillow==12.3.0
 psycopg[binary]==3.2.3
 requests==2.32.3
 sentinelhub==3.11.1
