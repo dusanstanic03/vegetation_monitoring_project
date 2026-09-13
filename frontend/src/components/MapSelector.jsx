@@ -1,41 +1,81 @@
-import { useState } from 'react'
-import { CircleMarker, ImageOverlay, MapContainer, Rectangle, TileLayer, useMapEvents } from 'react-leaflet'
+import { useEffect, useRef, useState } from 'react'
+import { ImageOverlay, MapContainer, Rectangle, TileLayer, useMap, useMapEvents } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 
-function MapClickHandler({ onBoundsChange, onPointsChange }) {
-  const [points, setPoints] = useState([])
+function roundCoordinate(value) {
+  return Number(value.toFixed(6))
+}
+
+function createBounds(firstPoint, secondPoint) {
+  return {
+    min_lat: roundCoordinate(Math.min(firstPoint.lat, secondPoint.lat)),
+    min_lon: roundCoordinate(Math.min(firstPoint.lng, secondPoint.lng)),
+    max_lat: roundCoordinate(Math.max(firstPoint.lat, secondPoint.lat)),
+    max_lon: roundCoordinate(Math.max(firstPoint.lng, secondPoint.lng)),
+  }
+}
+
+function RectangleDrawHandler({ enabled, onPreviewChange, onBoundsChange, onFinish }) {
+  const map = useMap()
+  const startPoint = useRef(null)
+
+  useEffect(() => {
+    const container = map.getContainer()
+
+    if (enabled) {
+      map.dragging.disable()
+      container.classList.add('drawing-enabled')
+    } else {
+      map.dragging.enable()
+      container.classList.remove('drawing-enabled')
+      startPoint.current = null
+      onPreviewChange(null)
+    }
+
+    return () => {
+      map.dragging.enable()
+      container.classList.remove('drawing-enabled')
+    }
+  }, [enabled, map, onPreviewChange])
 
   useMapEvents({
-    click(event) {
-      if (points.length !== 1) {
-        const firstPoint = [event.latlng.lat, event.latlng.lng]
-        setPoints([firstPoint])
-        onPointsChange([firstPoint])
-        return
-      }
+    mousedown(event) {
+      if (!enabled) return
+      startPoint.current = event.latlng
+      onPreviewChange(createBounds(event.latlng, event.latlng))
+    },
+    mousemove(event) {
+      if (!enabled || !startPoint.current) return
+      onPreviewChange(createBounds(startPoint.current, event.latlng))
+    },
+    mouseup(event) {
+      if (!enabled || !startPoint.current) return
 
-      const secondPoint = [event.latlng.lat, event.latlng.lng]
-      const nextPoints = [points[0], secondPoint]
-      setPoints([])
-      onPointsChange(nextPoints)
-      onBoundsChange({
-        min_lat: Math.min(nextPoints[0][0], nextPoints[1][0]),
-        min_lon: Math.min(nextPoints[0][1], nextPoints[1][1]),
-        max_lat: Math.max(nextPoints[0][0], nextPoints[1][0]),
-        max_lon: Math.max(nextPoints[0][1], nextPoints[1][1]),
-      })
+      const nextBounds = createBounds(startPoint.current, event.latlng)
+      startPoint.current = null
+
+      if (nextBounds.min_lat !== nextBounds.max_lat && nextBounds.min_lon !== nextBounds.max_lon) {
+        onBoundsChange(nextBounds)
+      }
+      onPreviewChange(null)
+      onFinish()
     },
   })
 
   return null
 }
 
-function MapSelector({ bounds, locations, selectedLocationId, overlayUrl, onBoundsChange, onLocationSelect }) {
-  const [points, setPoints] = useState([])
-  const activeBounds = [
+function toLeafletBounds(bounds) {
+  return [
     [bounds.min_lat, bounds.min_lon],
     [bounds.max_lat, bounds.max_lon],
   ]
+}
+
+function MapSelector({ bounds, locations, selectedLocationId, overlayUrl, onBoundsChange, onLocationSelect }) {
+  const [drawingEnabled, setDrawingEnabled] = useState(false)
+  const [previewBounds, setPreviewBounds] = useState(null)
+  const activeBounds = toLeafletBounds(bounds)
 
   return (
     <div className="map-wrap">
@@ -44,7 +84,12 @@ function MapSelector({ bounds, locations, selectedLocationId, overlayUrl, onBoun
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        <MapClickHandler onBoundsChange={onBoundsChange} onPointsChange={setPoints} />
+        <RectangleDrawHandler
+          enabled={drawingEnabled}
+          onPreviewChange={setPreviewBounds}
+          onBoundsChange={onBoundsChange}
+          onFinish={() => setDrawingEnabled(false)}
+        />
         {overlayUrl && (
           <ImageOverlay
             url={overlayUrl}
@@ -63,7 +108,7 @@ function MapSelector({ bounds, locations, selectedLocationId, overlayUrl, onBoun
               fillOpacity: location.id === selectedLocationId ? 0.24 : 0.08,
               weight: location.id === selectedLocationId ? 3 : 1,
             }}
-            eventHandlers={{ click: () => onLocationSelect(location) }}
+            eventHandlers={{ click: () => !drawingEnabled && onLocationSelect(location) }}
           />
         ))}
         {!selectedLocationId && (
@@ -72,11 +117,24 @@ function MapSelector({ bounds, locations, selectedLocationId, overlayUrl, onBoun
             pathOptions={{ color: '#d9ff8a', fillColor: '#b9ef6b', fillOpacity: 0.22, weight: 3 }}
           />
         )}
-        {points.map((point) => (
-          <CircleMarker key={point.join('-')} center={point} radius={6} pathOptions={{ color: '#f7ffdf', fillColor: '#b9ef6b', fillOpacity: 1 }} />
-        ))}
+        {previewBounds && (
+          <Rectangle
+            bounds={toLeafletBounds(previewBounds)}
+            pathOptions={{ color: '#ffffff', fillColor: '#b9ef6b', fillOpacity: 0.3, weight: 2, dashArray: '6 5' }}
+          />
+        )}
       </MapContainer>
-      <div className="map-instruction">Klik 1: prvi ugao &nbsp; / &nbsp; Klik 2: suprotni ugao</div>
+
+      <div className={drawingEnabled ? 'draw-toolbar active' : 'draw-toolbar'}>
+        <button type="button" onClick={() => setDrawingEnabled((current) => !current)}>
+          {drawingEnabled ? 'Otkazi crtanje' : 'Nacrtaj novu oblast'}
+        </button>
+        <span>
+          {drawingEnabled
+            ? 'Pritisnite i prevucite misem preko zeljene oblasti'
+            : 'Mapu mozete pomerati i uvecavati'}
+        </span>
+      </div>
     </div>
   )
 }
