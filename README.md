@@ -70,3 +70,17 @@ Ako Copernicus kredencijali nisu podeseni ili nema podataka, analiza dobija stat
 ### Swagger docs
 
 Nakon pokretanja, dostupni na `http://127.0.0.1:5000/apidocs/`
+
+## React frontend
+
+Frontend koristi React, Vite, React Leaflet i OpenStreetMap. Omogucava izbor oblasti sa dva klika na mapi, kreiranje lokacije, pokretanje analize i pregled istorije rezultata.
+
+Pokrenuti backend na portu `5000`, a zatim u drugom terminalu:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Frontend je dostupan na `http://127.0.0.1:5173`. Vite development server prosledjuje `/api` zahteve Flask backend-u.

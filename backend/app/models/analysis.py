@@ -14,6 +14,11 @@ class Analysis(db.Model):
     satellite_date = db.Column(db.Date, nullable=True)
     mean_ndvi = db.Column(db.Float, nullable=True)
     mean_ndwi = db.Column(db.Float, nullable=True)
+    classification_image_url = db.Column(db.String(255), nullable=True)
+    healthy_percentage = db.Column(db.Float, nullable=True)
+    dry_percentage = db.Column(db.Float, nullable=True)
+    degraded_percentage = db.Column(db.Float, nullable=True)
+    water_percentage = db.Column(db.Float, nullable=True)
     status = db.Column(db.String(20), nullable=False, default="PENDING")
     created_at = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
 
@@ -29,6 +34,11 @@ class Analysis(db.Model):
             "satellite_date": self.satellite_date.isoformat() if self.satellite_date else None,
             "mean_ndvi": self.mean_ndvi,
             "mean_ndwi": self.mean_ndwi,
+            "classification_image_url": self.classification_image_url,
+            "healthy_percentage": self.healthy_percentage,
+            "dry_percentage": self.dry_percentage,
+            "degraded_percentage": self.degraded_percentage,
+            "water_percentage": self.water_percentage,
             "status": self.status,
             "created_at": self.created_at.isoformat(),
         }

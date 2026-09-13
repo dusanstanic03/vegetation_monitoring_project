@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { CircleMarker, MapContainer, Rectangle, TileLayer, useMapEvents } from 'react-leaflet'
+import { CircleMarker, ImageOverlay, MapContainer, Rectangle, TileLayer, useMapEvents } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 
 function MapClickHandler({ onBoundsChange, onPointsChange }) {
@@ -30,7 +30,7 @@ function MapClickHandler({ onBoundsChange, onPointsChange }) {
   return null
 }
 
-function MapSelector({ bounds, locations, selectedLocationId, onBoundsChange, onLocationSelect }) {
+function MapSelector({ bounds, locations, selectedLocationId, overlayUrl, onBoundsChange, onLocationSelect }) {
   const [points, setPoints] = useState([])
   const activeBounds = [
     [bounds.min_lat, bounds.min_lon],
@@ -45,6 +45,14 @@ function MapSelector({ bounds, locations, selectedLocationId, onBoundsChange, on
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         <MapClickHandler onBoundsChange={onBoundsChange} onPointsChange={setPoints} />
+        {overlayUrl && (
+          <ImageOverlay
+            url={overlayUrl}
+            bounds={activeBounds}
+            opacity={0.78}
+            zIndex={350}
+          />
+        )}
         {locations.map((location) => (
           <Rectangle
             key={location.id}

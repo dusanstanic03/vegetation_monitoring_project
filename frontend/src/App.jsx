@@ -82,16 +82,19 @@ function App() {
   function updateCoordinate(event) {
     const { name, value } = event.target
     setSelectedLocationId(null)
+    setLatestResult(null)
     setBounds((current) => ({ ...current, [name]: Number(value) }))
   }
 
   function handleBoundsChange(nextBounds) {
     setSelectedLocationId(null)
+    setLatestResult(null)
     setBounds(nextBounds)
   }
 
-  function selectLocation(location) {
+  function selectLocation(location, keepResult = false) {
     setSelectedLocationId(location.id)
+    if (!keepResult) setLatestResult(null)
     setForm((current) => ({ ...current, name: location.name }))
     setBounds({
       min_lat: location.min_lat,
@@ -99,6 +102,13 @@ function App() {
       max_lat: location.max_lat,
       max_lon: location.max_lon,
     })
+  }
+
+  function showAnalysis(analysis) {
+    const location = locations.find((item) => item.id === analysis.location_id)
+    setLatestResult(analysis)
+    if (location) selectLocation(location, true)
+    document.querySelector('.workspace')?.scrollIntoView({ behavior: 'smooth' })
   }
 
   async function handleSubmit(event) {
@@ -170,6 +180,9 @@ function App() {
               bounds={bounds}
               locations={locations}
               selectedLocationId={selectedLocationId}
+              overlayUrl={latestResult?.classification_image_url
+                ? `${latestResult.classification_image_url}?analysis=${latestResult.id}`
+                : null}
               onBoundsChange={handleBoundsChange}
               onLocationSelect={selectLocation}
             />
@@ -267,6 +280,17 @@ function App() {
               <strong>{formatIndex(latestResult.mean_ndwi)}</strong>
               <small>indeks vlaznosti</small>
             </div>
+            {latestResult.classification_image_url && (
+              <div className="classification-breakdown">
+                <p className="list-label">Struktura analizirane povrsine</p>
+                <div className="class-grid">
+                  <div><i className="class-color healthy" /><span>Zdrava</span><strong>{latestResult.healthy_percentage}%</strong></div>
+                  <div><i className="class-color dry" /><span>Suva</span><strong>{latestResult.dry_percentage}%</strong></div>
+                  <div><i className="class-color degraded" /><span>Degradirana</span><strong>{latestResult.degraded_percentage}%</strong></div>
+                  <div><i className="class-color water" /><span>Voda</span><strong>{latestResult.water_percentage}%</strong></div>
+                </div>
+              </div>
+            )}
           </section>
         )}
 
@@ -289,6 +313,7 @@ function App() {
                   <th>Status</th>
                   <th>NDVI</th>
                   <th>NDWI</th>
+                  <th>Mapa</th>
                 </tr>
               </thead>
               <tbody>
@@ -302,11 +327,21 @@ function App() {
                       <td><span className={`status ${analysis.status.toLowerCase()}`}>{analysis.status}</span></td>
                       <td>{formatIndex(analysis.mean_ndvi)}</td>
                       <td>{formatIndex(analysis.mean_ndwi)}</td>
+                      <td>
+                        <button
+                          className="result-button"
+                          type="button"
+                          disabled={!analysis.classification_image_url}
+                          onClick={() => showAnalysis(analysis)}
+                        >
+                          Prikazi
+                        </button>
+                      </td>
                     </tr>
                   )
                 })}
                 {!loading && analyses.length === 0 && (
-                  <tr><td colSpan="6" className="empty-row">Pokrenite prvu analizu da bi se rezultat pojavio ovde.</td></tr>
+                  <tr><td colSpan="7" className="empty-row">Pokrenite prvu analizu da bi se rezultat pojavio ovde.</td></tr>
                 )}
               </tbody>
             </table>

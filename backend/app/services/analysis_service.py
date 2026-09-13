@@ -1,9 +1,14 @@
 from datetime import datetime
+from pathlib import Path
+
+from flask import current_app
 
 from app import db
 from app.models.analysis import Analysis
 from app.models.location import Location
+from app.services.classification_service import ClassificationService
 from app.services.copernicus_service import CopernicusService
+from app.services.overlay_service import OverlayService
 from app.services.vegetation_and_water_index_service import VegetationAndWaterIndexService
 
 
@@ -91,8 +96,22 @@ class AnalysisService:
             analysis.mean_ndvi = VegetationAndWaterIndexService.mean_index(ndvi)
             analysis.mean_ndwi = VegetationAndWaterIndexService.mean_index(ndwi)
             analysis.satellite_date = bands.get("satellite_date")
+
+            surface = ClassificationService.classify_surface(ndvi, ndwi)
+            overlay_path = OverlayService.save(
+                surface["classification"],
+                analysis.id,
+                Path(current_app.static_folder) / "analysis_results",
+            )
+            percentages = surface["percentages"]
+            analysis.classification_image_url = f"/static/analysis_results/{overlay_path.name}"
+            analysis.healthy_percentage = percentages["healthy"]
+            analysis.dry_percentage = percentages["dry"]
+            analysis.degraded_percentage = percentages["degraded"]
+            analysis.water_percentage = percentages["water"]
             analysis.status = "COMPLETED"
         except Exception:
+            current_app.logger.exception("Analysis %s failed", analysis.id)
             analysis.status = "FAILED"
 
         db.session.commit()
@@ -114,3 +133,14 @@ class AnalysisService:
             query = query.filter(Analysis.date_to <= AnalysisService.parse_date(args["date_to"], "date_to"))
 
         return query.order_by(Analysis.created_at.desc()).all()
+
+    @staticmethod
+    def delete_analysis(analysis):
+        if analysis.classification_image_url:
+            overlay_path = Path(current_app.static_folder) / "analysis_results" / Path(
+                analysis.classification_image_url
+            ).name
+            overlay_path.unlink(missing_ok=True)
+
+        db.session.delete(analysis)
+        db.session.commit()

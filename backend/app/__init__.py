@@ -2,6 +2,7 @@ from config import Config
 from flasgger import Swagger
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import inspect, text
 
 from app.swagger import SWAGGER_CONFIG, SWAGGER_TEMPLATE
 
@@ -42,6 +43,26 @@ def create_app():
     @app.cli.command("init-db")
     def init_db():
         db.create_all()
+
+        # create_all does not add columns to an existing SQLite database.
+        if db.engine.dialect.name == "sqlite" and "analyses" in inspect(db.engine).get_table_names():
+            existing_columns = {
+                column["name"] for column in inspect(db.engine).get_columns("analyses")
+            }
+            result_columns = {
+                "classification_image_url": "VARCHAR(255)",
+                "healthy_percentage": "FLOAT",
+                "dry_percentage": "FLOAT",
+                "degraded_percentage": "FLOAT",
+                "water_percentage": "FLOAT",
+            }
+            for column_name, column_type in result_columns.items():
+                if column_name not in existing_columns:
+                    db.session.execute(
+                        text(f"ALTER TABLE analyses ADD COLUMN {column_name} {column_type}")
+                    )
+            db.session.commit()
+
         print("Database tables created.")
 
     return app

@@ -122,6 +122,15 @@ SWAGGER_TEMPLATE = {
                     "x-nullable": True,
                     "example": -0.15,
                 },
+                "classification_image_url": {
+                    "type": "string",
+                    "x-nullable": True,
+                    "example": "/static/analysis_results/analysis_1_classification.png",
+                },
+                "healthy_percentage": {"type": "number", "format": "float", "example": 58.4},
+                "dry_percentage": {"type": "number", "format": "float", "example": 24.1},
+                "degraded_percentage": {"type": "number", "format": "float", "example": 12.7},
+                "water_percentage": {"type": "number", "format": "float", "example": 4.8},
                 "status": {
                     "type": "string",
                     "enum": ["PENDING", "PROCESSING", "COMPLETED", "FAILED"],

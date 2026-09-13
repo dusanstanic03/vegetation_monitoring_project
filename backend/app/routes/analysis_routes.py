@@ -126,6 +126,37 @@ def get_analysis(analysis_id):
     return analysis.to_dict(), 200
 
 
+@analysis_bp.get("/<int:analysis_id>/result")
+def get_analysis_result(analysis_id):
+    """Get an analysis result with map bounds.
+    ---
+    tags:
+      - Analyses
+    parameters:
+      - in: path
+        name: analysis_id
+        required: true
+        type: integer
+    responses:
+      200:
+        description: Analysis result prepared for map display
+      404:
+        description: Analysis not found
+    """
+    analysis = db.session.get(Analysis, analysis_id)
+    if not analysis:
+        return {"error": "Analysis not found"}, 404
+
+    result = analysis.to_dict()
+    result["bounds"] = {
+        "min_lat": analysis.location.min_lat,
+        "min_lon": analysis.location.min_lon,
+        "max_lat": analysis.location.max_lat,
+        "max_lon": analysis.location.max_lon,
+    }
+    return result, 200
+
+
 @analysis_bp.delete("/<int:analysis_id>")
 def delete_analysis(analysis_id):
     """Delete an analysis.
@@ -149,6 +180,5 @@ def delete_analysis(analysis_id):
     if not analysis:
         return {"error": "Analysis not found"}, 404
 
-    db.session.delete(analysis)
-    db.session.commit()
+    AnalysisService.delete_analysis(analysis)
     return "", 204

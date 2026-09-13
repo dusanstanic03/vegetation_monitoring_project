@@ -6,3 +6,6 @@ __pycache__/
 .pytest_cache/
 instance/
 backend/vegetation.db
+backend/app/static/analysis_results/*.png
+frontend/node_modules/
+frontend/dist/
