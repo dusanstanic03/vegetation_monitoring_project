@@ -96,7 +96,6 @@ class AnalysisService:
 
             analysis.mean_ndvi = VegetationAndWaterIndexService.mean_index(ndvi)
             analysis.mean_ndwi = VegetationAndWaterIndexService.mean_index(ndwi)
-            analysis.satellite_date = bands.get("satellite_date")
 
             surface = ClassificationService.classify_surface(ndvi, ndwi)
             overlay_path = OverlayService.save(

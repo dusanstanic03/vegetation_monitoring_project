@@ -85,7 +85,6 @@ class CopernicusService:
             "B03": np.where(mask, image[:, :, 0], np.nan),
             "B04": np.where(mask, image[:, :, 1], np.nan),
             "B08": np.where(mask, image[:, :, 2], np.nan),
-            "satellite_date": None,
         }
 
     @classmethod

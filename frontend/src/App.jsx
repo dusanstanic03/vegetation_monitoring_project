@@ -390,7 +390,6 @@ function App() {
                 <div><dt>Analiza</dt><dd>#{latestResult.id}</dd></div>
                 <div><dt>Lokacija</dt><dd>{selectedResultLocation?.name ?? `#${latestResult.location_id}`}</dd></div>
                 <div><dt>Period</dt><dd>{latestResult.date_from} / {latestResult.date_to}</dd></div>
-                <div><dt>Snimak</dt><dd>{latestResult.satellite_date ?? 'Nije dostupan'}</dd></div>
                 <div><dt>Oblacnost</dt><dd>do {latestResult.max_cloud_percentage}%</dd></div>
               </dl>
             </div>

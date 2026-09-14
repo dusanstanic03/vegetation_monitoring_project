@@ -104,12 +104,6 @@ SWAGGER_TEMPLATE = {
                     "format": "float",
                     "example": 20.0,
                 },
-                "satellite_date": {
-                    "type": "string",
-                    "format": "date",
-                    "x-nullable": True,
-                    "example": "2026-06-01",
-                },
                 "mean_ndvi": {
                     "type": "number",
                     "format": "float",

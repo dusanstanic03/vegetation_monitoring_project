@@ -11,7 +11,6 @@ class Analysis(db.Model):
     date_from = db.Column(db.Date, nullable=False)
     date_to = db.Column(db.Date, nullable=False)
     max_cloud_percentage = db.Column(db.Float, nullable=False)
-    satellite_date = db.Column(db.Date, nullable=True)
     mean_ndvi = db.Column(db.Float, nullable=True)
     mean_ndwi = db.Column(db.Float, nullable=True)
     classification_image_url = db.Column(db.String(255), nullable=True)
@@ -32,7 +31,6 @@ class Analysis(db.Model):
             "date_from": self.date_from.isoformat(),
             "date_to": self.date_to.isoformat(),
             "max_cloud_percentage": self.max_cloud_percentage,
-            "satellite_date": self.satellite_date.isoformat() if self.satellite_date else None,
             "mean_ndvi": self.mean_ndvi,
             "mean_ndwi": self.mean_ndwi,
             "classification_image_url": self.classification_image_url,
