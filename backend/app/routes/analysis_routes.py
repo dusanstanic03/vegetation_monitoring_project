@@ -47,7 +47,7 @@ def create_analysis():
 
 @analysis_bp.get("")
 def get_analyses():
-    """List analyses, newest first, with optional filters.
+    """Get all analyses, with optional filters.
     ---
     tags:
       - Analyses
@@ -100,7 +100,7 @@ def get_analyses():
 
 @analysis_bp.get("/<int:analysis_id>")
 def get_analysis(analysis_id):
-    """Get a single analysis by id.
+    """Get an analysis by id.
     ---
     tags:
       - Analyses

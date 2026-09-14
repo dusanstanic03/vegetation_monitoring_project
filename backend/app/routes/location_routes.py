@@ -40,7 +40,7 @@ def create_location():
 
 @location_bp.get("")
 def get_locations():
-    """List all locations, newest first.
+    """Get all locations.
     ---
     tags:
       - Locations
@@ -61,7 +61,7 @@ def get_locations():
 
 @location_bp.get("/<int:location_id>")
 def get_location(location_id):
-    """Get a single location by id.
+    """Get a location by id.
     ---
     tags:
       - Locations
