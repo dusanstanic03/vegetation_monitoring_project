@@ -62,7 +62,8 @@ def create_app(config_overrides=None):
             for column_name, column_type in result_columns.items():
                 if column_name not in existing_columns:
                     db.session.execute(
-                        text(f"ALTER TABLE analyses ADD COLUMN {column_name} {column_type}")
+                        text(
+                            f"ALTER TABLE analyses ADD COLUMN {column_name} {column_type}")
                     )
             db.session.commit()
 

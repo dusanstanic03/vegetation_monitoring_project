@@ -15,7 +15,8 @@ class Config:
 
     COPERNICUS_CLIENT_ID = os.getenv("COPERNICUS_CLIENT_ID")
     COPERNICUS_CLIENT_SECRET = os.getenv("COPERNICUS_CLIENT_SECRET")
-    COPERNICUS_BASE_URL = os.getenv("COPERNICUS_BASE_URL", "https://sh.dataspace.copernicus.eu")
+    COPERNICUS_BASE_URL = os.getenv(
+        "COPERNICUS_BASE_URL", "https://sh.dataspace.copernicus.eu")
     COPERNICUS_TOKEN_URL = os.getenv(
         "COPERNICUS_TOKEN_URL",
         "https://identity.dataspace.copernicus.eu/auth/realms/CDSE/protocol/openid-connect/token",

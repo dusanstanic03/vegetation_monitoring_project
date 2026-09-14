@@ -243,8 +243,7 @@ function App() {
     <div className="app-shell">
       <header className="topbar">
         <a className="brand" href="#top" aria-label="Vegetation Monitor pocetna">
-          <span className="brand-mark">VM</span>
-          <span>Vegetation Monitor</span>
+          <span>Monitor stanja vegetacije i zemljišta</span>
         </a>
         <div className={`service-state ${serviceStatus}`} title="Status Flask backend servera">
           <span className="status-dot" />
@@ -257,11 +256,10 @@ function App() {
       <main id="top">
         <section className="intro">
           <div>
-            <p className="eyebrow">Copernicus Data Space Ecosystem</p>
             <h1>Stanje vegetacije,<br />vidljivo na mapi.</h1>
           </div>
           <p className="intro-copy">
-            Nacrtajte oblast na mapi, izaberite period i pokrenite NDVI i NDWI analizu Sentinel-2 snimaka.
+            Nacrtajte oblast na mapi, izaberite period i pokrenite NDVI i NDWI analizu na osnovu Sentinel-2 satelitskih snimaka.
           </p>
         </section>
 
