@@ -89,7 +89,7 @@ Nakon pokretanja, dostupni na `http://127.0.0.1:5000/apidocs/`
 
 ## React frontend
 
-Frontend koristi React, Vite, React Leaflet i OpenStreetMap. Omogucava izbor oblasti sa dva klika na mapi, kreiranje lokacije, pokretanje analize i pregled istorije rezultata.
+Frontend koristi React, Vite, React Leaflet i OpenStreetMap. Omogucava izbor oblasti klikom i prevlačenjem miša, kreiranje lokacije, pokretanje analize i pregled istorije rezultata.
 
 Pokrenuti backend na portu `5000`, a zatim u drugom terminalu:
 
