@@ -243,7 +243,7 @@ function App() {
     <div className="app-shell">
       <header className="topbar">
         <a className="brand" href="#top" aria-label="Vegetation Monitor pocetna">
-          <span>Monitor stanja vegetacije i zemljišta</span>
+          <span>Praćenje stanja vegetacije i zemljišta</span>
         </a>
         <div className={`service-state ${serviceStatus}`} title="Status Flask backend servera">
           <span className="status-dot" />
