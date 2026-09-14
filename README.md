@@ -5,6 +5,8 @@ Sentinel-2 satelita Copernicus programa.
 
 ## Pokretanje
 
+### Manuelno
+
 1. Otvori folder projekta u terminalu
 
 2. Kreirati venv i aktivirati ga:
@@ -45,6 +47,20 @@ Očekivani odgovor:
 {
   "status": "UP"
 }
+```
+
+### Automatizovano
+
+Postavljanje projekta - .env fajl, baza podataka, Python okruženje, npm paketi.
+
+```bash
+bash scripts/setup.sh
+```
+
+Pokretanje projekta - bekend i frontend.
+
+```bash
+bash scripts/run.sh
 ```
 
 ## REST API
