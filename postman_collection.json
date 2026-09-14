@@ -118,6 +118,13 @@
           }
         },
         {
+          "name": "Get Analysis with map boundary",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/analyses/1/result"
+          }
+        },
+        {
           "name": "Delete Analysis",
           "request": {
             "method": "DELETE",
